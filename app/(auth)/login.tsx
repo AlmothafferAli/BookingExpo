@@ -1,0 +1,159 @@
+import React, { useState } from 'react';
+import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
+import { Link, router } from 'expo-router';
+import COLORS from '../../Base/constants';
+import FloatingLabelInput from '../../Base/components/FloatingLabelInput';
+
+export default function LoginScreen() {
+    const [loginData, setLoginData] = useState({
+        email: '',
+        password: '',
+    });
+    const handleLogin = () => {
+        router.replace('/(tabs)/Home');
+    }
+    return (
+        <View style={styles.container}>
+            {/* Logo */}
+            <View style={styles.logoContainer}>
+                <Image
+                    source={require('@/assets/Logo.png')}
+                    style={styles.logo}
+                    resizeMode="contain"
+                />
+            </View>
+
+            {/* Title */}
+            <View style={{ marginBottom: 40 }}>
+                <Text style={styles.title}>مرحباً بك مجدداً</Text>
+                <Text style={styles.subtitle}>
+                    أدخل بياناتك للمتابعة والوصول لمميزات التطبيق
+                </Text>
+            </View>
+
+            {/* Form */}
+            <View style={styles.formContainer}>
+                <FloatingLabelInput
+                    label="البريد الالكتروني"
+                    value={loginData.email}
+                    onChangeText={(text) => setLoginData({ ...loginData, email: text })}
+                    placeholder="ali@almothaffer.com"
+                    icon="email"
+                />
+
+                {/* Password Input */}
+                <FloatingLabelInput
+                    label="كلمة المرور"
+                    value={loginData.password}
+                    onChangeText={(text) => setLoginData({ ...loginData, password: text })}
+                    secureTextEntry
+                    icon="lock-outline"
+                />
+
+                {/* Forgot Password Link */}
+                <Pressable style={styles.forgotPasswordContainer}>
+                    <Text style={styles.forgotPasswordText}>هل نسيت كلمة المرور؟</Text>
+                </Pressable>
+
+                {/* Login Button */}
+                <Pressable style={styles.loginButton} onPress={handleLogin}>
+                    <Text style={styles.loginButtonText}>تسجيل الدخول</Text>
+                </Pressable>
+
+                {/* Register Link */}
+                <View style={styles.registerLinkContainer}>
+                    <Text style={styles.registerLinkText}>ليس لديك حساب؟ </Text>
+                    <Link href="/(auth)/Registration" asChild>
+                        <Pressable>
+                            <Text style={styles.registerLinkHighlight}>سجل الآن</Text>
+                        </Pressable>
+                    </Link>
+                </View>
+
+                {/* Divider/Social Section (Mirrors Registration) */}
+                <View style={styles.dividerContainer}>
+                    <Text style={styles.divider}>───────── أو سجل دخولك باستخدام ─────────</Text>
+                </View>
+            </View>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 24,
+    },
+    logoContainer: {
+        marginTop: 60,
+        marginBottom: 20,
+    },
+    logo: {
+        width: 80,
+        height: 80,
+    },
+    title: {
+        fontFamily: 'Alexandria-Bold',
+        fontSize: 24,
+        color: COLORS.PrimarySlate,
+        textAlign: 'right',
+    },
+    subtitle: {
+        fontFamily: 'Alexandria-Light',
+        fontSize: 14,
+        color: COLORS.PrimarySlate,
+        textAlign: 'right',
+        marginTop: 8,
+    },
+    formContainer: {
+        width: '100%',
+    },
+    forgotPasswordContainer: {
+        alignItems: 'flex-start',
+        marginBottom: 24,
+    },
+    forgotPasswordText: {
+        fontFamily: 'Alexandria-Medium',
+        fontSize: 12,
+        color: COLORS.PrimarySlate,
+    },
+    loginButton: {
+        backgroundColor: COLORS.PrimarySlate,
+        borderRadius: 50,
+        paddingVertical: 16,
+        alignItems: 'center',
+        marginTop: 16,
+        marginBottom: 24,
+    },
+    loginButtonText: {
+        fontFamily: 'Alexandria-Bold',
+        fontSize: 16,
+        color: '#FFFFFF',
+    },
+    registerLinkContainer: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 40,
+    },
+    registerLinkText: {
+        fontFamily: 'Alexandria-Regular',
+        fontSize: 14,
+        color: '#666',
+    },
+    registerLinkHighlight: {
+        fontFamily: 'Alexandria-Bold',
+        fontSize: 14,
+        color: COLORS.PrimarySlate,
+    },
+    dividerContainer: {
+        marginTop: 20,
+    },
+    divider: {
+        fontFamily: 'Alexandria-Regular',
+        fontSize: 11,
+        textAlign: 'center',
+        color: '#999',
+    },
+});

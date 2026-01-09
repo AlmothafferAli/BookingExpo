@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    text {
+        font-family: Alexandria-Regular;
+    }
+
+}
+
+body {
+    font-family: Alexandria-Regular;
+    background-color: #F4F7FC;
+}
