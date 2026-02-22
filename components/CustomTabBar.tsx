@@ -1,31 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, Dimensions } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Svg, { Path, G } from 'react-native-svg';
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-    withTiming,
-    LinearTransition
-} from 'react-native-reanimated';
-import COLORS from '../Base/constants';
+import { TabButton, TabItem } from './TabButton';
 
 const { width } = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 70;
 const HEXAGON_SIZE = 70;
-const FLOAT_OFFSET = 27; // Amount the hexagon floats up
-const ANIMATION_DURATION = 100;
-
-// Define Tab Item Type
-type TabItem = {
-    name: string;
-    icon: keyof typeof MaterialCommunityIcons.glyphMap | keyof typeof MaterialIcons.glyphMap;
-    route: string;
-    key: string;
-};
 
 // Initial Configuration
 const INITIAL_TABS: TabItem[] = [
@@ -33,10 +16,8 @@ const INITIAL_TABS: TabItem[] = [
     { name: 'Calendar', icon: 'calendar-month-outline', route: 'Calendar', key: 'Calendar' },
     { name: 'Home', icon: 'home-outline', route: 'Home', key: 'Home' }, // Initial Center
     { name: 'Messages', icon: 'message-processing-outline', route: 'Messages', key: 'Messages' },
-    { name: 'Profile', icon: 'account-outline', route: 'Profile', key: 'Profile' },
+    { name: 'MyStudents', icon: 'account-outline', route: 'MyStudents', key: 'MyStudents' },
 ];
-
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const [displayTabs, setDisplayTabs] = useState<TabItem[]>(INITIAL_TABS);
@@ -104,7 +85,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
                     const isActive = tab.route === currentRouteName;
 
                     return (
-                        <TabIcon
+                        <TabButton
                             key={tab.key}
                             tab={tab}
                             isMiddle={isMiddle}
@@ -117,47 +98,6 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
         </View>
     );
 }
-
-// Sub-component for individual animated icon to keep hooks clean
-const TabIcon = ({ tab, isMiddle, isActive, onPress }: { tab: TabItem, isMiddle: boolean, isActive: boolean, onPress: () => void }) => {
-
-    // Animate Y position: Middle icons float up, side icons stay down
-    const animatedStyle = useAnimatedStyle(() => {
-        return {
-            transform: [
-                { translateY: withTiming(isMiddle ? -FLOAT_OFFSET : 0, { duration: ANIMATION_DURATION }) }
-            ]
-        };
-    });
-
-    // Animate Scale/Color for feedback
-    const iconStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ scale: withTiming(isActive ? 1.2 : 1, { duration: ANIMATION_DURATION }) }],
-            opacity: withTiming(1, { duration: ANIMATION_DURATION })
-        };
-    });
-
-    const iconName = (isActive ? tab.icon.replace('-outline', '') : tab.icon) as any;
-    const iconColor = isActive && !isMiddle ? COLORS.PrimarySlate : (isMiddle ? '#FFF' : '#999');
-
-    return (
-        <Animated.View
-            layout={LinearTransition.duration(ANIMATION_DURATION)}
-            style={[styles.tabButton, animatedStyle]}
-        >
-            <TouchableOpacity onPress={onPress} style={styles.touchableArea}>
-                <Animated.View style={iconStyle}>
-                    <MaterialCommunityIcons
-                        name={iconName}
-                        size={isMiddle ? 32 : 28}
-                        color={iconColor}
-                    />
-                </Animated.View>
-            </TouchableOpacity>
-        </Animated.View>
-    );
-};
 
 const styles = StyleSheet.create({
     container: {
@@ -209,18 +149,5 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'flex-end', // Align bottom to match the pill
         paddingHorizontal: 10,
-    },
-    tabButton: {
-        flex: 1,
-        height: TAB_BAR_HEIGHT,
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 10, // Ensure clickability
-    },
-    touchableArea: {
-        width: '100%',
-        height: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
     },
 });

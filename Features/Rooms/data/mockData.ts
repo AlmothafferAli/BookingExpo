@@ -19,7 +19,10 @@ export const MOCK_ROOMS: Room[] = [
             stage: 'المرحلة 3',
             group: 'Group A',
             timeRemaining: '45 دقيقة'
-        }
+        },
+        startTime: new Date().toISOString(),
+        endTime: new Date(Date.now() + 3600000).toISOString(),
+        course: 'برمجة الحاسوب',
     },
     {
         id: '2',
@@ -28,6 +31,10 @@ export const MOCK_ROOMS: Room[] = [
         capacity: 25,
         status: 'available',
         image: ROOM_IMAGE,
+        booker: null,
+        startTime: null,
+        endTime: null,
+        course: null,
     },
     {
         id: '3',
@@ -42,7 +49,10 @@ export const MOCK_ROOMS: Room[] = [
             stage: 'المرحلة 2',
             group: 'Group B',
             timeRemaining: 'ساعة و 15 دقيقة'
-        }
+        },
+        startTime: new Date().toISOString(),
+        endTime: new Date(Date.now() + 7200000).toISOString(),
+        course: 'هندسة البرمجيات',
     },
     {
         id: '4',
@@ -51,6 +61,10 @@ export const MOCK_ROOMS: Room[] = [
         capacity: 20,
         status: 'available',
         image: ROOM_IMAGE,
+        booker: null,
+        startTime: null,
+        endTime: null,
+        course: null,
     },
     {
         id: '5',
@@ -59,6 +73,10 @@ export const MOCK_ROOMS: Room[] = [
         capacity: 85,
         status: 'available',
         image: ROOM_IMAGE,
+        booker: null,
+        startTime: null,
+        endTime: null,
+        course: null,
     },
     {
         id: '6',
@@ -73,7 +91,10 @@ export const MOCK_ROOMS: Room[] = [
             stage: 'المرحلة 1',
             group: 'Group A',
             timeRemaining: '15 دقيقة'
-        }
+        },
+        startTime: new Date().toISOString(),
+        endTime: new Date(Date.now() + 1800000).toISOString(),
+        course: 'شبكات الحاسوب',
     },
     {
         id: '7',
@@ -82,6 +103,10 @@ export const MOCK_ROOMS: Room[] = [
         capacity: 90,
         status: 'available',
         image: ROOM_IMAGE,
+        booker: null,
+        startTime: null,
+        endTime: null,
+        course: null,
     }
 ];
 

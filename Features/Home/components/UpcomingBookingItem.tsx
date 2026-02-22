@@ -1,22 +1,26 @@
 import React from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Image } from 'react-native';
+import { AppText as Text } from '../../../components/AppText';
 import { styles } from '../styles';
+import { Booking } from '../data/homeSlice';
 
-export const UpcomingBookingItem = ({ item }: { item: any }) => (
+export const UpcomingBookingItem = ({ item }: { item: Booking }) => (
     <View style={styles.bookingCard}>
         <View style={styles.bookingInfo}>
-            <Text style={styles.bookingTitle}>{item.title}</Text>
+            <Text style={styles.bookingTitle}>{item.name}</Text>
+            {/* Removed Time, Location, Stage as per API response in todos.md */}
             <View style={styles.bookingRow}>
-                <Text style={styles.bookingText}>وقت المحاضرة {item.time}</Text>
+                <Text style={styles.bookingText}>{item.type}</Text>
             </View>
             <View style={styles.bookingRow}>
-                <Text style={styles.bookingText}>{item.location}</Text>
-                <Text style={styles.bookingLabel}>مكان الحجز</Text>
+                <Text style={styles.bookingText}>{item.status}</Text>
             </View>
             <View style={styles.bookingRow}>
-                <Text style={styles.bookingText}>{item.stage}</Text>
+                <Text style={styles.bookingText}>
+                    {new Date(item.startTime).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })} • {new Date(item.startTime).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                </Text>
             </View>
         </View>
-        <Image source={item.image} style={styles.bookingImage} />
+        <Image source={{ uri: item.image }} style={styles.bookingImage} />
     </View>
 );

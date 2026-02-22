@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import COLORS from '../constants';
+import { AnimatedAppText as Text } from '../../components/AppText';
 
 interface FloatingLabelInputProps {
     label: string;
@@ -59,9 +60,9 @@ const FloatingLabelInput = ({
     return (
         <View style={[styles.container, style]}>
             <Animated.View style={[styles.inputContainer, containerStyle]}>
-                <Animated.Text style={[styles.label, labelStyle]}>
+                <Text style={[styles.label, labelStyle]}>
                     {label}
-                </Animated.Text>
+                </Text>
 
                 <View style={styles.innerWrapper}>
                     {icon && (

@@ -1,36 +1,43 @@
-import { Stack, Link } from 'expo-router';
+import { Redirect } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
+import { secureStore } from '../Base/secureStore';
 
-import { View } from 'react-native';
+export default function Index() {
+  console.log("Rendering Index Route");
+  const [isChecked, setIsChecked] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
 
+  useEffect(() => {
+    const checkToken = async () => {
+      try {
+        console.log('Token:');
+        const token = await secureStore.getToken();
+        console.log('Token:', token);
+        if (token) {
+          setHasToken(true);
+        }
+      } catch (error) {
+        console.error("Error checking token in index:", error);
+      } finally {
+        setIsChecked(true);
+      }
+    };
+    checkToken();
+  }, []);
 
-import { Button } from '@/components/Button';
-import { Container } from '@/components/Container';
-import { ScreenContent } from '@/components/ScreenContent';
+  if (!isChecked) {
+    console.log('Checked token:', hasToken);
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white' }}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    );
+  }
 
+  if (hasToken) {
+    return <Redirect href="/(tabs)/Home" />;
+  }
 
-
-export default function Home() {
-  return (
-    
-      <View className={styles.container}>
-    
-      <Stack.Screen options={{ title: 'Home' }} />
-      <Container>
-        <ScreenContent path="app/index.tsx" title="Home">
-        
-        </ScreenContent>
-        <Link href={{ pathname: '/details', params: { name: 'Dan' } }} asChild>
-          
-              <Button title="Show Details" />
-          
-        </Link>
-      </Container>
-    </View>
-  );
+  return <Redirect href="/(auth)/onboarding" />;
 }
-
-
-const styles = {
-  container: "flex flex-1 bg-white",
-}
-

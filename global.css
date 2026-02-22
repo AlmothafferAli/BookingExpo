@@ -2,11 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+    --primary: #4F46E5;
+    --primary-light: #EEF2FF;
+    --background: #F9FAFB;
+    --card: #FFFFFF;
+    --border: #E5E7EB;
+    --border-light: #F3F4F6;
+    
+    --text-main: #1F2937;
+    --text-muted: #6B7280;
+    --text-dim: #9CA3AF;
+    --text-content: #374151;
+    --text-gray: #4B5563;
+
+    --success-bg: #DEF7EC;
+    --success-text: #03543F;
+    --error-bg: #FDE8E8;
+    --error-text: #9B1C1C;
+    --info-bg: #F0F9FF;
+    --info-text: #0369A1;
+    --info-border: #BAE6FD;
+}
+
 @layer base {
-    text {
+
+    /* 
+       Note: CSS Tag selectors like 'text' or 'div' only work on WEB.
+       On Mobile (Native), you must use 'className' or 'style' with a font family.
+    */
+    * {
         font-family: Alexandria-Regular;
     }
 
+    /* Global utility class for Alexandria */
+    .font-alexandria {
+        font-family: Alexandria-Regular;
+    }
+
+    text {
+        font-family: Alexandria-Regular;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+    }
 }
 
 body {

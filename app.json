@@ -6,7 +6,8 @@
     "scheme": "my-expo-app",
     "platforms": [
       "ios",
-      "android"
+      "android",
+      "web"
     ],
     "web": {
       "bundler": "metro",
@@ -25,7 +26,8 @@
             "./assets/Fonts/Alexandria-Bold.ttf"
           ]
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -67,6 +67,7 @@ export const styles = StyleSheet.create({
         fontFamily: 'Alexandria-Bold',
         fontSize: 14,
         color: '#FFFFFF',
+        textShadowColor: 'transparent',
     },
     loginLink: {
         paddingVertical: 4,

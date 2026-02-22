@@ -1,21 +1,25 @@
 export type RoomStatus = 'booked' | 'available';
 
 export interface BookerInfo {
+    id: string;
     name: string;
-    avatar: any; // Image source
+    avatar: string;
     stage: string;
     group: string;
-    timeRemaining: string; // e.g., "45 min"
+    timeRemaining: string;
 }
 
 export interface Room {
     id: string;
     name: string;
-    type: 'Lecture Hall' | 'Lab';
+    type: string;
     capacity: number;
     status: RoomStatus;
-    booker?: BookerInfo;
-    image: any; // Image source
+    booker: BookerInfo | null;
+    image: string;
+    startTime: string | null;
+    endTime: string | null;
+    course: string | null;
 }
 
 export type FilterState = {

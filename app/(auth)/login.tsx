@@ -1,16 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
+import { View, Pressable, StyleSheet, Image } from 'react-native';
+import { AppText as Text } from '../../components/AppText';
 import { Link, router } from 'expo-router';
 import COLORS from '../../Base/constants';
 import FloatingLabelInput from '../../Base/components/FloatingLabelInput';
+import { useLoginMutation } from '../../Base/authSlice';
+import { useApi } from '../../Base/useApi';
+import { ActivityIndicator } from 'react-native';
 
 export default function LoginScreen() {
     const [loginData, setLoginData] = useState({
         email: '',
         password: '',
     });
+    const [loginMutation] = useLoginMutation();
+
+    const { execute: login, loading } = useApi(loginMutation, {
+        onSuccess: () => {
+            router.replace('/(tabs)/Home');
+        },
+        successMessage: 'تم تسجيل الدخول بنجاح',
+    });
+
     const handleLogin = () => {
-        router.replace('/(tabs)/Home');
+        if (!loginData.email || !loginData.password) {
+            alert("Please enter email and password");
+            return;
+        }
+
+        // Map email to username as per cURL request if needed, or send as is based on backend
+        // The cURL example used "username": "marwa", so we might need to send email as username 
+        // or the form should be "Username". Assuming "email" field acts as identifier.
+        login({
+            username: loginData.email,
+            password: loginData.password
+        });
     }
     return (
         <View style={styles.container}>
@@ -56,8 +80,16 @@ export default function LoginScreen() {
                 </Pressable>
 
                 {/* Login Button */}
-                <Pressable style={styles.loginButton} onPress={handleLogin}>
-                    <Text style={styles.loginButtonText}>تسجيل الدخول</Text>
+                <Pressable
+                    style={[styles.loginButton, loading && { opacity: 0.7 }]}
+                    onPress={handleLogin}
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#FFF" />
+                    ) : (
+                        <Text style={styles.loginButtonText}>تسجيل الدخول</Text>
+                    )}
                 </Pressable>
 
                 {/* Register Link */}
@@ -130,6 +162,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Alexandria-Bold',
         fontSize: 16,
         color: '#FFFFFF',
+        textShadowColor: 'transparent',
     },
     registerLinkContainer: {
         flexDirection: 'row-reverse',

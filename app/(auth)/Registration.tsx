@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
+import { View, Pressable, StyleSheet, Image } from 'react-native';
+import { AppText as Text } from '../../components/AppText';
 import { Link } from 'expo-router';
 import COLORS from '../../Base/constants';
 import FloatingLabelInput from '../../Base/components/FloatingLabelInput';
@@ -129,6 +130,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Alexandria-Bold',
         fontSize: 16,
         color: '#FFFFFF',
+        textShadowColor: 'transparent',
     },
     termsText: {
         fontFamily: 'Alexandria-Regular',

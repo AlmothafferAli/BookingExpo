@@ -5,6 +5,7 @@ import { Link } from 'expo-router';
 import { BOARDING_DATA, BOARDING_IMAGES } from './constants';
 import { useOnboardingAnimation } from './animation';
 import { styles } from './styles';
+import { AnimatedAppText as Text } from '../../components/AppText';
 
 /**
  * Main Onboarding Screen Component
@@ -49,13 +50,13 @@ export default function OnboardingScreen() {
         <Pressable style={styles.container} onPress={handlePress}>
             {/* Top Section: Title, Description, and Indicators */}
             <View style={styles.topSection}>
-                <Animated.Text style={[styles.topText, textAnimatedStyle]}>
+                <Text style={[styles.topText, textAnimatedStyle]}>
                     {BOARDING_DATA[activePage as keyof typeof BOARDING_DATA]?.Title}
-                </Animated.Text>
+                </Text>
 
-                <Animated.Text style={[styles.descriptionText, textAnimatedStyle]}>
+                <Text style={[styles.descriptionText, textAnimatedStyle]}>
                     {BOARDING_DATA[activePage as keyof typeof BOARDING_DATA]?.Description}
-                </Animated.Text>
+                </Text>
 
                 <View style={styles.pageIndicatorContainer}>
                     {Object.keys(BOARDING_DATA).map((key) => (
@@ -86,17 +87,17 @@ export default function OnboardingScreen() {
                 <View style={styles.actionButtonsContainer}>
                     <Link href="/(auth)/Registration" asChild>
                         <Pressable style={styles.registerButton}>
-                            <Animated.Text style={[styles.registerButtonText, textAnimatedStyle]}>
+                            <Text style={[styles.registerButtonText, textAnimatedStyle]}>
                                 انشئ حسابك
-                            </Animated.Text>
+                            </Text>
                         </Pressable>
                     </Link>
 
                     <Link href="/(auth)/login" asChild>
                         <Pressable style={styles.loginLink}>
-                            <Animated.Text style={[styles.loginLinkText, textAnimatedStyle]}>
+                            <Text style={[styles.loginLinkText, textAnimatedStyle]}>
                                 لديك حساب بالفعل؟
-                            </Animated.Text>
+                            </Text>
                         </Pressable>
                     </Link>
                 </View>

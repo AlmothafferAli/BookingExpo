@@ -1,23 +1,49 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity, ViewStyle, StyleProp, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Image, StyleSheet, TouchableOpacity, ViewStyle, StyleProp, Dimensions } from 'react-native';
+import { AppText as Text } from '../../../components/AppText';
 import { BlurView } from 'expo-blur';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Room } from '../data/types';
 import COLORS from '../../../Base/constants';
+import { BookingModal } from './BookingModal';
+import { useRouter } from 'expo-router';
 
 interface RoomCardProps {
     room: Room;
     style?: StyleProp<ViewStyle>;
+    stageName?: string;
+    groupName?: string;
 }
 
-const { width } = Dimensions.get('window');
-
-export const RoomCard = ({ room, style }: RoomCardProps) => {
+export const RoomCard = ({ room, style, stageName = '', groupName = '' }: RoomCardProps) => {
+    const router = useRouter();
+    const [isBookingModalVisible, setIsBookingModalVisible] = useState(false);
     const isBooked = room.status === 'booked';
     const booker = room.booker;
 
+    const translateType = (type: string) => {
+        if (type === 'LAP') return 'مختبر';
+        if (type === 'LECTURE_ROOM') return 'قاعة محاضرات';
+        return type;
+    };
+
+    const formatTime = (isoString: string | null) => {
+        if (!isoString) return '--:--';
+        try {
+            const d = new Date(isoString);
+            return d.toLocaleTimeString('ar-EG', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        } catch (e) {
+            return '--:--';
+        }
+    };
+
     return (
         <View style={[styles.cardContainer, style]}>
-            <Image source={room.image} style={styles.cardImage} resizeMode="cover" />
+            <Image source={{ uri: room.image }} style={styles.cardImage} resizeMode="cover" />
 
             {/* Status Badge - Top Right */}
             <View style={styles.statusBadgeContainer}>
@@ -27,6 +53,17 @@ export const RoomCard = ({ room, style }: RoomCardProps) => {
                 </BlurView>
             </View>
 
+            {isBooked && (<View style={styles.capacityBadgeContainer}>
+                <TouchableOpacity onPress={() => {
+                    router.push(`/chat/${booker?.id}`);
+                }} activeOpacity={0.8}>
+                    <BlurView intensity={20} tint="light" style={styles.modernChatButton}>
+                        <MaterialCommunityIcons name="chat-outline" size={18} color="#FFF" />
+                        <Text style={styles.chatButtonText}>محادثة</Text>
+                    </BlurView>
+                </TouchableOpacity>
+
+            </View>)}
             {/* Capacity Badge - Top Left (if available) */}
             {!isBooked && (
                 <View style={styles.capacityBadgeContainer}>
@@ -43,10 +80,13 @@ export const RoomCard = ({ room, style }: RoomCardProps) => {
                     <View style={styles.infoContent}>
                         <View style={styles.mainInfo}>
                             <Text style={styles.roomName}>{room.name}</Text>
-                            <Text style={styles.roomType}>{room.type === 'Lab' ? 'معمل' : 'قاعة محاضرات'}</Text>
+                            <Text style={styles.roomType} numberOfLines={1}>
+                                {isBooked && room.course ? room.course : translateType(room.type)}
+                            </Text>
                         </View>
 
                         {isBooked && booker ? (
+
                             <View style={styles.bookerSection}>
                                 <View style={styles.bookerRefBox}>
                                     <Text style={styles.bookerRefText}>{booker.stage}</Text>
@@ -56,20 +96,40 @@ export const RoomCard = ({ room, style }: RoomCardProps) => {
                                     <Text style={styles.bookerName}>{booker.name}</Text>
                                     <View style={styles.timerRow}>
                                         <MaterialCommunityIcons name="clock-time-three-outline" size={12} color="#FCD34D" />
-                                        <Text style={styles.timerText}>{booker.timeRemaining}</Text>
+                                        <Text style={styles.timerText}>
+                                            {formatTime(room.startTime)} - {formatTime(room.endTime)}
+                                        </Text>
                                     </View>
                                 </View>
-                                <Image source={booker.avatar} style={styles.avatar} />
+                                <Image
+                                    source={{
+                                        uri: booker.avatar && booker.avatar.startsWith('http')
+                                            ? booker.avatar
+                                            : 'https://ui-avatars.com/api/?name=' + booker.name
+                                    }}
+                                    style={styles.avatar}
+                                />
                             </View>
                         ) : (
-                            <TouchableOpacity style={styles.actionButton}>
+                            <TouchableOpacity
+                                style={styles.actionButton}
+                                onPress={() => setIsBookingModalVisible(true)}
+                            >
                                 <Text style={styles.actionButtonText}>احجز الآن</Text>
-                                <MaterialCommunityIcons name="arrow-left" size={18} color={COLORS.PrimarySlate} />
+                                <MaterialCommunityIcons name="calendar-plus" size={18} color={COLORS.PrimarySlate} />
                             </TouchableOpacity>
                         )}
                     </View>
                 </BlurView>
             </View>
+
+            <BookingModal
+                visible={isBookingModalVisible}
+                onClose={() => setIsBookingModalVisible(false)}
+                room={room}
+                stageName={stageName}
+                groupName={groupName}
+            />
         </View>
     );
 };
@@ -157,6 +217,9 @@ const styles = StyleSheet.create({
         fontFamily: 'Alexandria-Bold',
         fontSize: 22,
         marginBottom: 4,
+        textShadowColor: 'rgba(0, 0, 0, 0.3)',
+        textShadowOffset: { width: 3, height: 3 },
+        textShadowRadius: 8,
     },
     roomType: {
         color: '#94A3B8',
@@ -164,22 +227,24 @@ const styles = StyleSheet.create({
         fontSize: 12,
     },
     bookerSection: {
-        flexDirection: 'row',
+        flexDirection: 'row-reverse',
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.2)',
         padding: 8,
         borderRadius: 16,
-        marginRight: 10,
     },
     bookerMeta: {
         alignItems: 'flex-end',
-        marginRight: 12,
-        marginLeft: 8,
+        marginLeft: 12,
+        marginRight: 8,
     },
     bookerName: {
         color: '#FFF',
         fontFamily: 'Alexandria-SemiBold',
         fontSize: 13,
+        textShadowColor: 'rgba(0, 0, 0, 0.3)',
+        textShadowOffset: { width: 2, height: 2 },
+        textShadowRadius: 4,
     },
     timerRow: {
         flexDirection: 'row-reverse',
@@ -201,10 +266,10 @@ const styles = StyleSheet.create({
     },
     bookerRefBox: {
         alignItems: 'center',
-        marginRight: 8,
-        borderRightWidth: 1,
-        borderRightColor: 'rgba(255,255,255,0.1)',
-        paddingRight: 8,
+        marginLeft: 8,
+        borderLeftWidth: 1,
+        borderLeftColor: 'rgba(255,255,255,0.1)',
+        paddingLeft: 8,
     },
     bookerRefText: {
         color: '#E2E8F0',
@@ -228,6 +293,22 @@ const styles = StyleSheet.create({
     actionButtonText: {
         color: COLORS.PrimarySlate,
         fontFamily: 'Alexandria-Bold',
+        fontSize: 12,
+    },
+    modernChatButton: {
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        gap: 6,
+    },
+    chatButtonText: {
+        color: '#FFF',
+        fontFamily: 'Alexandria-Medium',
         fontSize: 12,
     },
 });
