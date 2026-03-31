@@ -1,30 +1,27 @@
 import { useState, useMemo } from 'react';
-import { ViewMode, Stage, Group, Contact } from '../types';
-import { TEACHERS, STUDENTS_MOCK } from '../constants';
+import { useGetMyStudentsQuery } from '../../Students/data/examSlice';
+import { useGetConversationsQuery } from '../../Chat/chatApi';
 
 export const useMessages = () => {
-    const [viewMode, setViewMode] = useState<ViewMode>('teachers');
-    const [selectedStage, setSelectedStage] = useState<Stage>('Stage 1');
-    const [selectedGroup, setSelectedGroup] = useState<Group>('All');
-    const [isBroadcastModalVisible, setIsBroadcastModalVisible] = useState(false);
+    const [isContactModalVisible, setIsContactModalVisible] = useState(false);
 
-    const filteredData = useMemo(() => {
-        return viewMode === 'teachers'
-            ? TEACHERS
-            : STUDENTS_MOCK.filter(s =>
-                s.stage === selectedStage && (selectedGroup === 'All' || s.group === selectedGroup)
-            );
-    }, [viewMode, selectedStage, selectedGroup]);
+    // Main list: Conversations (Recent Chats)
+    const { data: conversationsData, isLoading: conversationsLoading, refetch: refetchConversations } = useGetConversationsQuery();
+    
+    // FAB list: All Students
+    const { data: studentsData, isLoading: studentsLoading, refetch: refetchStudents } = useGetMyStudentsQuery({});
+
+    const conversations = useMemo(() => conversationsData || [], [conversationsData]);
+    const students = useMemo(() => studentsData || [], [studentsData]);
 
     return {
-        viewMode,
-        setViewMode,
-        selectedStage,
-        setSelectedStage,
-        selectedGroup,
-        setSelectedGroup,
-        isBroadcastModalVisible,
-        setIsBroadcastModalVisible,
-        filteredData
+        conversations,
+        conversationsLoading,
+        refetchConversations,
+        students,
+        studentsLoading,
+        refetchStudents,
+        isContactModalVisible,
+        setIsContactModalVisible,
     };
 };

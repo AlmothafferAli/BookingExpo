@@ -74,3 +74,16 @@ export interface ExamResult {
     weightedScore: number;
     weight: number;
 }
+
+export interface TeacherResponse {
+    id: string;
+    username: string;
+    email: string;
+    role: string;
+    image?: string;
+    courses: {
+        id: string;
+        name: string;
+        courseCode: string;
+    }[];
+}

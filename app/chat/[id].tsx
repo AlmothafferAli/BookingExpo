@@ -29,36 +29,97 @@ import Animated, {
     SlideInLeft,
     Layout
 } from 'react-native-reanimated';
+import { socketService, ChatMessageDto } from '../../Base/SocketService';
+import { useGetPrivateHistoryQuery, useGetCourseHistoryQuery } from '../../Features/Chat/chatApi';
+import { secureStore } from '../../Base/secureStore';
+import { useEffect } from 'react';
 
 export default function ChatScreen() {
-    const { id } = useLocalSearchParams();
+    const { id, isCourse } = useLocalSearchParams<{ id: string, isCourse?: string }>();
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const [messages, setMessages] = useState(MOCK_MESSAGES);
+    
+    const [messages, setMessages] = useState<ChatMessageDto[]>([]);
     const [inputText, setInputText] = useState('');
+    const [currentUser, setCurrentUser] = useState<any>(null);
     const flatListRef = useRef<FlatList>(null);
 
-    // Find contact info
-    const contact = [...TEACHERS, ...STUDENTS_MOCK].find(c => c.id === id) || TEACHERS[0];
+    // Fetch history
+    const { data: historyData, isLoading: historyLoading } = isCourse === 'true'
+        ? useGetCourseHistoryQuery(id!) 
+        : useGetPrivateHistoryQuery(id!);
 
-    const handleSend = () => {
-        if (inputText.trim() === '') return;
+    // Load history into state
+    useEffect(() => {
+        if (historyData) {
+            setMessages(historyData);
+        }
+    }, [historyData]);
 
-        const newMessage = {
-            id: Date.now().toString(),
-            senderId: 'me',
-            text: inputText,
-            timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-            status: 'sent' as const,
+    // Setup Socket
+    useEffect(() => {
+        const initChat = async () => {
+            const user = await secureStore.getUser();
+            setCurrentUser(user);
+
+            await socketService.connect();
+
+            const onNewMessage = (msg: ChatMessageDto) => {
+                console.log("=== onNewMessage received from socket ===", msg);
+                setMessages(prev => {
+                    if (prev.some(m => m.id === msg.id)) {
+                        console.log("Message already exists in state, ignoring.", msg.id);
+                        return prev;
+                    }
+                    console.log("Adding new message to state:", msg.id);
+                    return [...prev, msg];
+                });
+                setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+            };
+
+            if (user?.id) {
+                await socketService.subscribeToPrivateMessages('ChatScreen', onNewMessage);
+            }
+
+            if (isCourse === 'true') {
+                await socketService.subscribeToCourseMessages(id!, 'ChatScreen', onNewMessage);
+            }
         };
 
-        setMessages(prev => [...prev, newMessage]);
-        setInputText('');
+        initChat();
 
-        // Auto-scroll to bottom
-        setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
-        }, 100);
+        return () => {
+            socketService.unsubscribe('ChatScreen');
+        };
+    }, [id, isCourse]);
+
+    // @ts-ignore
+    const contact = [...TEACHERS, ...STUDENTS_MOCK].find(c => c.id === id) || { name: isCourse === 'true' ? 'Course Chat' : 'User', isOnline: false };
+
+    const handleSend = async () => {
+        console.log("=== handleSend triggered ===");
+        console.log("Input text before trim:", `"${inputText}"`);
+        if (inputText.trim() === '') {
+            console.log("Input text is empty after trim. Returning early.");
+            return;
+        }
+
+        const message: ChatMessageDto = {
+            content: inputText,
+            recipientId: isCourse === 'true' ? undefined : id,
+            courseId: isCourse === 'true' ? id : undefined,
+        };
+        console.log("Message object ready to send:", message);
+
+        try {
+            console.log("Sending via socketService...");
+            await socketService.sendMessage(message);
+            console.log("socketService.sendMessage completed.");
+            setInputText('');
+            console.log("Input text cleared.");
+        } catch (error) {
+            console.error("Error in handleSend:", error);
+        }
     };
 
     const pickImage = async () => {
@@ -69,15 +130,13 @@ export default function ChatScreen() {
         });
 
         if (!result.canceled) {
-            const newMessage = {
-                id: Date.now().toString(),
-                senderId: 'me',
-                imageUrl: result.assets[0].uri,
-                timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-                status: 'sent' as const,
+            const message: ChatMessageDto = {
+                content: result.assets[0].uri, // For now using content for URI, or you can add imageUrl to DTO
+                recipientId: isCourse === 'true' ? undefined : id,
+                courseId: isCourse === 'true' ? id : undefined,
             };
-            setMessages(prev => [...prev, newMessage]);
-            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+            // socketService.sendMessage(message); 
+            // Optimistic update or wait for socket
         }
     };
 
@@ -87,21 +146,18 @@ export default function ChatScreen() {
         });
 
         if (!result.canceled) {
-            const newMessage = {
-                id: Date.now().toString(),
-                senderId: 'me',
-                fileName: result.assets[0].name,
-                fileUrl: result.assets[0].uri,
-                timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-                status: 'sent' as const,
+            const message: ChatMessageDto = {
+                content: result.assets[0].name,
+                recipientId: isCourse === 'true' ? undefined : id,
+                courseId: isCourse === 'true' ? id : undefined,
             };
-            setMessages(prev => [...prev, newMessage]);
-            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+            // socketService.sendMessage(message);
         }
     };
 
-    const renderMessage = ({ item, index }: { item: typeof MOCK_MESSAGES[0], index: number }) => {
-        const isMe = item.senderId === 'me';
+    const renderMessage = ({ item }: { item: ChatMessageDto }) => {
+        // Use the backend-provided 'isMine' property, falling back to senderId comparison if missing
+        const isMe = item.isMine !== undefined ? item.isMine : item.senderId === currentUser?.id;
 
         return (
             <Animated.View
@@ -115,17 +171,12 @@ export default function ChatScreen() {
                     styles.messageBubble,
                     isMe ? styles.myBubble : styles.otherBubble
                 ]}>
-                    {item.text && <Text style={[styles.messageText, isMe && styles.myMessageText]}>{item.text}</Text>}
-                    {item.imageUrl && (
-                        <Image source={{ uri: item.imageUrl }} style={styles.messageImage} />
-                    )}
-                    {item.fileName && (
-                        <TouchableOpacity style={styles.fileContainer}>
-                            <MaterialCommunityIcons name="file-pdf-box" size={32} color={isMe ? "#FFF" : "#FF5252"} />
-                            <Text style={[styles.fileName, isMe && styles.myMessageText]}>{item.fileName}</Text>
-                        </TouchableOpacity>
-                    )}
-                    <Text style={[styles.timestamp, isMe && styles.myTimestamp]}>{item.timestamp}</Text>
+                    <Text style={[styles.messageText, isMe && styles.myMessageText]}>
+                        {item.content}
+                    </Text>
+                    <Text style={[styles.timestamp, isMe && styles.myTimestamp]}>
+                        {item.timestamp ? new Date(item.timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </Text>
                 </View>
             </Animated.View>
         );
@@ -143,12 +194,15 @@ export default function ChatScreen() {
                     <Text style={styles.headerName}>{contact.name}</Text>
                     <View style={styles.statusRow}>
                         <Text style={styles.headerStatus}>
-                            {contact.isOnline ? 'متصل الآن' : contact.lastSeen || 'غير متصل'}
+                             {/* @ts-ignore */}
+                            {contact.isOnline ? 'متصل الآن' : (contact.lastSeen || 'غير متصل')}
                         </Text>
+                        {/* @ts-ignore */}
                         {contact.isOnline && <View style={styles.onlineDot} />}
                     </View>
                 </View>
 
+                {/* @ts-ignore */}
                 <Image source={contact.avatar || require('@/assets/avatar.png')} style={styles.headerAvatar} />
             </BlurView>
 
@@ -156,7 +210,7 @@ export default function ChatScreen() {
             <FlatList
                 ref={flatListRef}
                 data={messages}
-                keyExtractor={item => item.id}
+                keyExtractor={(item, index) => item.id || index.toString()}
                 renderItem={renderMessage}
                 contentContainerStyle={[styles.listContent, { paddingBottom: 100 }]}
                 showsVerticalScrollIndicator={false}
@@ -189,8 +243,12 @@ export default function ChatScreen() {
                     </View>
 
                     <TouchableOpacity
-                        style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
-                        onPress={handleSend}
+                        style={[styles.sendButton, inputText.trim() === '' && styles.sendButtonDisabled]}
+                        onPress={() => {
+                            console.log("=== SEND BUTTON PRESSED ===");
+                            handleSend();
+                        }}
+                        disabled={inputText.trim() === ''}
                     >
                         <MaterialCommunityIcons name="send" size={22} color="#FFF" style={{ transform: [{ rotate: '180deg' }] }} />
                     </TouchableOpacity>

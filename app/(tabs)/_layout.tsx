@@ -14,7 +14,7 @@ export default function TabLayout() {
                     headerShown: false,
                 }}
             >
-                <Tabs.Screen name="Search" />
+                <Tabs.Screen name="Rooms" />
                 <Tabs.Screen name="Calendar" />
                 <Tabs.Screen name="Home" />
                 <Tabs.Screen name="Messages" />

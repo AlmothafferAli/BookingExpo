@@ -6,6 +6,15 @@ export const apiSlice = createApi({
     reducerPath: 'api',
     baseQuery: fetchBaseQuery({
         baseUrl: BaseApiUrl,
+        timeout: 7000,
+        responseHandler: async (response) => {
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                return text;
+            }
+        },
         prepareHeaders: async (headers: Headers, { endpoint }) => {
             // Never send token on login or registration
             if (endpoint === 'login') {

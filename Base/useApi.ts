@@ -11,7 +11,7 @@ interface UseApiOptions<T> {
 }
 
 export function useApi<T, A>(
-    apiFn: (args: A) => Promise<T>,
+    apiFn: (args: A) => any,
     options: UseApiOptions<T> = {}
 ) {
     const [data, setData] = useState<T | null>(null);
@@ -31,17 +31,29 @@ export function useApi<T, A>(
             // RTK Query mutation triggers return a "Promise-like" object with .unwrap().
             // We should check if .unwrap exists.
 
-            const resultPromise = apiFn(args);
-            const result = (resultPromise as any).unwrap ? await (resultPromise as any).unwrap() : await resultPromise;
+            const response = await apiFn(args);
 
-            setData(result);
+            // RTK Query triggers resolve with an object containing { data } or { error }.
+            // We handle this manually instead of using .unwrap() to avoid "Uncaught (in promise)" errors
+            // that sometimes occur when the environment tracks the unwrapped rejection.
+            if (response && typeof response === 'object' && 'error' in response) {
+                throw response;
+            }
+
+            // Extract data if it's an RTK Query result, otherwise use the response as is
+            const result = (response && typeof response === 'object' && 'data' in response)
+                ? response.data
+                : response;
+
+            const typedResult = result as T;
+            setData(typedResult);
 
             if (finalOptions.successMessage) {
                 Alert.alert("نجاح", finalOptions.successMessage);
             }
 
             if (finalOptions.onSuccess) {
-                finalOptions.onSuccess(result);
+                finalOptions.onSuccess(typedResult);
             }
 
             if (finalOptions.redirectTo) { // @ts-ignore
@@ -52,34 +64,46 @@ export function useApi<T, A>(
         } catch (err: any) {
             setError(err);
 
-            const error = err?.error || err;
+            const rtkError = err?.error || err;
             let errorMessage = null;
 
-            if (error) {
-                if (error.status === 'PARSING_ERROR' && error.originalStatus === 400) {
-                    errorMessage = typeof error.data === 'string' ? error.data : "invalid request";
-                } else if (typeof error.status === 'number') {
-                    switch (error.status) {
-                        case 400:
-                            errorMessage = error.message || (typeof error.data === 'string' ? error.data : "Bad Request");
-                            break;
-                        case 401:
-                            errorMessage = error.data?.message || "Unauthorized";
-                            break;
-                        case 403:
-                            errorMessage = error.data?.message || "Forbidden";
-                            break;
-                        case 404:
-                            errorMessage = error.data?.message || "Not Found";
-                            break;
-                        case 500:
-                            errorMessage = "Internal Server Error";
-                            break;
-                        default:
-                            errorMessage = `Error ${error.status}`;
+            if (rtkError) {
+                if (rtkError.status === 'PARSING_ERROR' && rtkError.originalStatus === 400) {
+                    errorMessage = typeof rtkError.data === 'string' ? rtkError.data : "Invalid request format";
+                } else if (typeof rtkError.status === 'number') {
+                    // Extract message from response body if it exists
+                    const data = rtkError.data;
+                    if (data) {
+                        if (typeof data === 'string') {
+                            errorMessage = data;
+                        } else if (typeof data === 'object') {
+                            errorMessage = data.message || data.error || data.msg;
+                        }
+                    }
+
+                    if (!errorMessage) {
+                        switch (rtkError.status) {
+                            case 400:
+                                errorMessage = "طلب غير صالح"; // Bad Request
+                                break;
+                            case 401:
+                                errorMessage = "غير مصرح لك"; // Unauthorized
+                                break;
+                            case 403:
+                                errorMessage = "غير مسموح لك بالوصول"; // Forbidden
+                                break;
+                            case 404:
+                                errorMessage = "المورد غير موجود"; // Not Found
+                                break;
+                            case 500:
+                                errorMessage = "خطأ في خادم النظام"; // Internal Server Error
+                                break;
+                            default:
+                                errorMessage = `خطأ ${rtkError.status}`;
+                        }
                     }
                 } else {
-                    errorMessage = error.message || "Unknown Error";
+                    errorMessage = rtkError.message || (typeof rtkError === 'string' ? rtkError : null);
                 }
             }
 

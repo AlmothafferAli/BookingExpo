@@ -1,5 +1,5 @@
 import { apiSlice } from '../../../Base/apiSlice';
-import { TeacherStudentResponse, CreateExamRequest, SubmitScoreRequest, Exam, Grade, ExamResult } from '../types';
+import { TeacherStudentResponse, CreateExamRequest, SubmitScoreRequest, Exam, Grade, ExamResult, TeacherResponse } from '../types';
 import { BaseUrl } from '../../../Base/types/Urls';
 
 export const examApiSlice = apiSlice.injectEndpoints({
@@ -68,6 +68,24 @@ export const examApiSlice = apiSlice.injectEndpoints({
             query: ({ courseId, studentId }) => `/exams/results/${courseId}/${studentId}`,
             transformResponse: (response: ExamResult[]) => response,
         }),
+        getTeachers: builder.query<TeacherResponse[], { termSearch?: string } | void>({
+            query: (params) => ({
+                url: '/users/teachers',
+                params: params || {},
+            }),
+            transformResponse: (response: any) => {
+                const teachersArray = Array.isArray(response) ? response : (response?.data || []);
+                return teachersArray.map((teacher: TeacherResponse) => {
+                    let finalImage = teacher.image;
+                    if (finalImage && typeof finalImage === 'string' && !finalImage.startsWith('http')) {
+                        finalImage = `${BaseUrl}/uploads/${finalImage}`;
+                    } else if (!finalImage) {
+                        finalImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(teacher.username)}&background=random&size=128`;
+                    }
+                    return { ...teacher, image: finalImage };
+                });
+            },
+        }),
     }),
 });
 
@@ -78,4 +96,5 @@ export const {
     useSubmitScoreMutation,
     useGetMyGradeQuery,
     useGetStudentResultsQuery,
+    useGetTeachersQuery,
 } = examApiSlice;

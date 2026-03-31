@@ -3,23 +3,22 @@ import { View, FlatList, StyleSheet, Alert, StatusBar, ActivityIndicator, Toucha
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StudentCard } from '../../Features/Students/components/StudentCard';
+import { TeacherCard } from '../../Features/Students/components/TeacherCard';
 import { StudentDetailModal } from '../../Features/Students/components/StudentDetailModal';
 import { GradeFormModal } from '../../Features/Students/components/GradeFormModal';
-import { Student, Grade, TeacherStudentResponse } from '../../Features/Students/types';
+import { Student, Grade, TeacherStudentResponse, TeacherResponse } from '../../Features/Students/types';
 import { AppText } from '../../components/AppText';
-import { useGetMyStudentsQuery, useCreateExamMutation, useSubmitScoreMutation } from '../../Features/Students/data/examSlice';
+import { useGetMyStudentsQuery, useCreateExamMutation, useSubmitScoreMutation, useGetTeachersQuery } from '../../Features/Students/data/examSlice';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import COLORS from '../../Base/constants';
 
 export default function MyStudents() {
     const router = useRouter();
     // For now we pass empty params, but you can wire up search inputs to these
 
-    const { data: rawStudents, isLoading, isError, refetch } = useGetMyStudentsQuery({});
-    // TODO: Add useGetExamsQuery to fetch created exams list
-    // const { data: exams } = useGetExamsQuery(); 
-    
-    // For now, we will simulate passing exams into the modal or fetching them inside it.
-    // Ideally, there should be an endpoint to 'getTeacherExams'
+    const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
+    const { data: rawStudents, isLoading: isStudentsLoading, isError: isStudentsError, error: studentsError, refetch: refetchStudents } = useGetMyStudentsQuery({});
+    const { data: rawTeachers, isLoading: isTeachersLoading, isError: isTeachersError, error: teachersError, refetch: refetchTeachers } = useGetTeachersQuery({});
     
     const [submitScore] = useSubmitScoreMutation();
 
@@ -27,10 +26,13 @@ export default function MyStudents() {
     const [isDetailVisible, setIsDetailVisible] = useState(false);
     const [isGradeFormVisible, setIsGradeFormVisible] = useState(false);
 
-    const students = useMemo(() => {
-        if (!rawStudents) return [];
-        return rawStudents;
-    }, [rawStudents]);
+    const students = useMemo(() => rawStudents || [], [rawStudents]);
+    const teachers = useMemo(() => rawTeachers || [], [rawTeachers]);
+
+    const isLoading = activeTab === 'students' ? isStudentsLoading : isTeachersLoading;
+    const isError = activeTab === 'students' ? isStudentsError : isTeachersError;
+    const error = activeTab === 'students' ? studentsError : teachersError;
+    const refetch = activeTab === 'students' ? refetchStudents : refetchTeachers;
 
     const handleStudentPress = (student: TeacherStudentResponse) => {
         setSelectedStudent(student);
@@ -44,7 +46,6 @@ export default function MyStudents() {
 
     const handleGradeSubmit = async (gradeData: any) => {
         try {
-            // GradeData should now include examId selected from the form
             await submitScore({
                 examId: gradeData.examId,
                 studentId: selectedStudent!.userid,
@@ -60,19 +61,19 @@ export default function MyStudents() {
         }
     };
 
-    if (isLoading) {
+    if (isLoading && !rawStudents && !rawTeachers) {
         return (
             <SafeAreaView style={[styles.container, styles.center]}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
-                <AppText style={{ marginTop: 12 }}>جاري تحميل الطلاب...</AppText>
+                <AppText style={{ marginTop: 12 }}>جاري التحميل...</AppText>
             </SafeAreaView>
         );
     }
 
-    if (isError) {
+    if (isError && !rawStudents && !rawTeachers) {
         return (
             <SafeAreaView style={[styles.container, styles.center]}>
-                <AppText>فشل في تحميل الطلاب.</AppText>
+                <AppText>فشل في التحميل.</AppText>
                 <TouchableOpacity onPress={() => refetch()} style={styles.retryButton}>
                     <AppText style={styles.retryText}>إعادة المحاولة</AppText>
                 </TouchableOpacity>
@@ -84,23 +85,51 @@ export default function MyStudents() {
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
             <View style={styles.header}>
-                <AppText style={styles.headerTitle}>طلابي</AppText>
+                <AppText style={styles.headerTitle}>المشتركين</AppText>
+            </View>
+
+            {/* Tab Selector */}
+            <View style={styles.tabContainer}>
+                <TouchableOpacity 
+                    style={[styles.tab, activeTab === 'teachers' && styles.activeTab]} 
+                    onPress={() => setActiveTab('teachers')}
+                >
+                    <AppText style={[styles.tabText, activeTab === 'teachers' && styles.activeTabText]}>المعلمون</AppText>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                    style={[styles.tab, activeTab === 'students' && styles.activeTab]} 
+                    onPress={() => setActiveTab('students')}
+                >
+                    <AppText style={[styles.tabText, activeTab === 'students' && styles.activeTabText]}>الطلاب</AppText>
+                </TouchableOpacity>
             </View>
 
             <FlatList
-                data={students}
-                keyExtractor={(item) => item.userid}
+                data={(activeTab === 'students' ? students : teachers) as any[]}
+                keyExtractor={(item: any) => activeTab === 'students' ? item.userid : item.id}
                 renderItem={({ item }) => (
                     <View style={styles.cardWrapper}>
-                        <StudentCard
-                            student={item}
-                            onPress={() => handleStudentPress(item)}
-                        />
+                        {activeTab === 'students' ? (
+                            <StudentCard
+                                student={item as any}
+                                onPress={() => handleStudentPress(item as any)}
+                            />
+                        ) : (
+                            <TeacherCard 
+                                teacher={item as any}
+                            />
+                        )}
                     </View>
                 )}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <MaterialCommunityIcons name="account-off-outline" size={64} color="#CBD5E1" />
+                        <AppText style={styles.emptyText}>لا يوجد {activeTab === 'students' ? 'طلاب' : 'معلمون'} حالياً</AppText>
+                    </View>
+                }
             />
 
             <StudentDetailModal
@@ -125,7 +154,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
-        paddingVertical: 14,
+        paddingTop: 100, // Clear global absolute header
     },
     header: {
         paddingHorizontal: 20,
@@ -135,6 +164,32 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontFamily: 'Alexandria-Bold',
         color: COLORS.textMain,
+    },
+    tabContainer: {
+        flexDirection: 'row-reverse',
+        paddingHorizontal: 20,
+        marginBottom: 16,
+        gap: 12,
+    },
+    tab: {
+        paddingVertical: 8,
+        paddingHorizontal: 20,
+        borderRadius: 20,
+        backgroundColor: '#F1F5F9',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    activeTab: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+    },
+    tabText: {
+        fontFamily: 'Alexandria-Medium',
+        fontSize: 14,
+        color: '#64748B',
+    },
+    activeTabText: {
+        color: '#FFF',
     },
     listContent: {
         paddingBottom: 20,
@@ -146,6 +201,19 @@ const styles = StyleSheet.create({
     center: {
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    emptyContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 60,
+    },
+    emptyText: {
+        fontFamily: 'Alexandria-Regular',
+        fontSize: 16,
+        color: '#94A3B8',
+        marginTop: 12,
+        textAlign: 'center',
     },
     retryButton: {
         marginTop: 16,

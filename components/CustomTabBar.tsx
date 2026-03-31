@@ -12,7 +12,7 @@ const HEXAGON_SIZE = 70;
 
 // Initial Configuration
 const INITIAL_TABS: TabItem[] = [
-    { name: 'rooms', icon: 'book-online', route: 'Rooms', key: 'Rooms' },
+    { name: 'My Content', icon: 'folder-multiple-outline', route: 'Rooms', key: 'Rooms' },
     { name: 'Calendar', icon: 'calendar-month-outline', route: 'Calendar', key: 'Calendar' },
     { name: 'Home', icon: 'home-outline', route: 'Home', key: 'Home' }, // Initial Center
     { name: 'Messages', icon: 'message-processing-outline', route: 'Messages', key: 'Messages' },
